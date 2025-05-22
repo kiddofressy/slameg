@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slameg Group - Charity Organization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-panel {
+            display: none;
+        }
+        .show-admin {
+            display: block;
+        }
+        .gallery-item {
+            position: relative;
+        }
+        .gallery-item:hover .edit-overlay {
+            opacity: 1;
+        }
+        .edit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .donation-bar {
+            height: 30px;
+            background: linear-gradient(90deg, #4ade80 0%, #3b82f6 100%);
+            border-radius: 9999px;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Navigation -->
+    <nav class="bg-green-700 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-hands-helping text-2xl"></i>
+                <span class="text-xl font-bold">Slameg Group</span>
+            </div>
+            <div class="hidden md:flex space-x-6">
+                <a href="#home" class="hover:text-green-200">Home</a>
+                <a href="#about" class="hover:text-green-200">About</a>
+                <a href="#events" class="hover:text-green-200">Events</a>
+                <a href="#gallery" class="hover:text-green-200">Gallery</a>
+                <a href="#donate" class="hover:text-green-200">Donate</a>
+                <a href="#contact" class="hover:text-green-200">Contact</a>
+                <button onclick="toggleLoginModal()" class="bg-white text-green-700 px-4 py-1 rounded hover:bg-gray-100">Login</button>
+            </div>
+            <button class="md:hidden text-2xl" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden md:hidden bg-green-600 px-4 py-2">
+            <a href="#home" class="block py-2 hover:text-green-200">Home</a>
+            <a href="#about" class="block py-2 hover:text-green-200">About</a>
+            <a href="#events" class="block py-2 hover:text-green-200">Events</a>
+            <a href="#gallery" class="block py-2 hover:text-green-200">Gallery</a>
+            <a href="#donate" class="block py-2 hover:text-green-200">Donate</a>
+            <a href="#contact" class="block py-2 hover:text-green-200">Contact</a>
+            <button onclick="toggleLoginModal()" class="w-full bg-white text-green-700 px-4 py-1 rounded my-2 hover:bg-gray-100">Login</button>
+        </div>
+    </nav>
+
+    <!-- Admin Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Admin Login</h3>
+                <button onclick="toggleLoginModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="adminLoginForm" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input type="text" id="username" name="username" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="password" name="password" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel (hidden by default) -->
+    <div id="adminPanel" class="admin-panel fixed top-0 left-0 w-full bg-gray-800 text-white z-50 p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h3 class="text-xl font-bold">Admin Panel</h3>
+            <div class="space-x-4">
+                <button onclick="showAdminSection('upload')" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">Upload Images</button>
+                <button onclick="showAdminSection('donations')" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded">Manage Donations</button>
+                <button onclick="showAdminSection('members')" class="bg-purple-500 hover:bg-purple-600 px-3 py-1 rounded">View Members</button>
+                <button onclick="logoutAdmin()" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Content Sections -->
+    <div id="adminUploadSection" class="admin-panel container mx-auto my-8 p-6 bg-white rounded-lg shadow-md">
+        <h3 class="text-2xl font-bold mb-4">Upload Images to Gallery</h3>
+        <form id="uploadForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Select Images</label>
+                <input type="file" id="galleryImages" name="galleryImages" multiple accept="image/*" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+            </div>
+            <div>
+                <label for="imageCaption" class="block text-sm font-medium text-gray-700">Caption</label>
+                <input type="text" id="imageCaption" name="imageCaption" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+            </div>
+            <div>
+                <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                    Upload Images
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div id="adminDonationsSection" class="admin-panel container mx-auto my-8 p-6 bg-white rounded-lg shadow-md">
+        <h3 class="text-2xl font-bold mb-4">Manage Donations</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    </tr>
+                </thead>
+                <tbody id="donationsTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Donations will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="adminMembersSection" class="admin-panel container mx-auto my-8 p-6 bg-white rounded-lg shadow-md">
+        <h3 class="text-2xl font-bold mb-4">Registered Members</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
+                    </tr>
+                </thead>
+                <tbody id="membersTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Members will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section id="home" class="bg-green-600 text-white py-20">
+        <div class="container mx-auto px-4 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-6">Slameg Group</h1>
+            <p class="text-xl md:text-2xl mb-8">Making a difference through charity since 2023</p>
+            <div class="flex justify-center space-x-4">
+                <a href="#donate" class="bg-white text-green-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300">Donate Now</a>
+                <a href="#about" class="bg-transparent border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-700 transition duration-300">Learn More</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">About Slameg Group</h2>
+            <div class="flex flex-col md:flex-row items-center">
+                <div class="md:w-1/2 mb-8 md:mb-0 md:pr-8">
+                    <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1471&q=80" alt="Group Photo" class="rounded-lg shadow-lg w-full">
+                </div>
+                <div class="md:w-1/2">
+                    <h3 class="text-2xl font-semibold mb-4 text-gray-800">Founded by Dr. Karanja</h3>
+                    <p class="text-gray-600 mb-4">Slameg Group was established in 2023 with a mission to make a positive impact through charitable work in our community.</p>
+                    <p class="text-gray-600 mb-4">We are proud to celebrate our 2-year anniversary on June 28, 2025, marking two years of dedicated service and community support.</p>
+                    <div class="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+                        <p class="text-green-700 font-medium">Our vision is to create a world where everyone has access to basic needs and opportunities for growth.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Events Section -->
+    <section id="events" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Upcoming Events</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Event cards will be added here dynamically -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-green-600 text-white py-2 px-4">
+                        <h3 class="font-bold text-lg">Anniversary Celebration</h3>
+                        <p class="text-sm">June 28, 2025</p>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-600">Join us as we celebrate 2 years of service to the community with special guests and activities.</p>
+                        <div class="mt-4 flex justify-between items-center">
+                            <span class="text-sm text-gray-500">Nairobi, Kenya</span>
+                            <button class="text-green-600 hover:text-green-800 text-sm font-medium">More Info</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Our Gallery</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="galleryGrid">
+                <!-- Gallery images will be added here dynamically -->
+                <div class="gallery-item rounded-lg overflow-hidden shadow-md">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80" alt="Charity Event" class="w-full h-48 object-cover">
+                    <div class="p-3">
+                        <p class="text-sm text-gray-600">Community Food Drive - May 2024</p>
+                    </div>
+                    <div class="edit-overlay">
+                        <button class="bg-white text-gray-800 px-3 py-1 rounded hover:bg-gray-200">
+                            <i class="fas fa-edit mr-1"></i> Edit
+                        </button>
+                    </div>
+                </div>
+                <div class="gallery-item rounded-lg overflow-hidden shadow-md">
+                    <img src="https://images.unsplash.com/photo-1529310399831-ed472b81d589?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80" alt="Volunteers" class="w-full h-48 object-cover">
+                    <div class="p-3">
+                        <p class="text-sm text-gray-600">Volunteer Training - March 2024</p>
+                    </div>
+                    <div class="edit-overlay">
+                        <button class="bg-white text-gray-800 px-3 py-1 rounded hover:bg-gray-200">
+                            <i class="fas fa-edit mr-1"></i> Edit
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Donation Section -->
+    <section id="donate" class="py-16 bg-green-600 text-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">Support Our Cause</h2>
+            <div class="max-w-3xl mx-auto bg-white text-gray-800 rounded-lg shadow-xl overflow-hidden">
+                <div class="md:flex">
+                    <div class="md:w-1/2 bg-green-700 text-white p-8">
+                        <h3 class="text-2xl font-bold mb-4">Make a Donation</h3>
+                        <p class="mb-6">Your contribution helps us continue our charitable work and make a difference in people's lives.</p>
+                        <div class="mb-6">
+                            <h4 class="font-bold mb-2">M-Pesa Donation</h4>
+                            <div class="bg-green-800 p-4 rounded-lg">
+                                <p class="font-mono text-lg">Till Number: <span class="font-bold">4359994</span></p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold mb-2">Donation Progress</h4>
+                            <div class="bg-gray-200 rounded-full h-4 mb-2">
+                                <div class="donation-bar" style="width: 65%"></div>
+                            </div>
+                            <p class="text-sm">KES 65,000 raised of KES 100,000 goal</p>
+                        </div>
+                    </div>
+                    <div class="md:w-1/2 p-8">
+                        <h3 class="text-2xl font-bold mb-4 text-gray-800">Donation Form</h3>
+                        <form id="donationForm" class="space-y-4">
+                            <div>
+                                <label for="donorName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                                <input type="text" id="donorName" name="donorName" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label for="donorEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input type="email" id="donorEmail" name="donorEmail" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label for="donorPhone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+                                <input type="tel" id="donorPhone" name="donorPhone" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label for="donationAmount" class="block text-sm font-medium text-gray-700">Amount (KES)</label>
+                                <input type="number" id="donationAmount" name="donationAmount" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Submit Donation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Donation History Section -->
+    <section id="history" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Donation History</h2>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Donor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount (KES)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Purpose</th>
+                            </tr>
+                        </thead>
+                        <tbody id="donationHistoryBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Donation history will be added here dynamically -->
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-06-15</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">John Mwangi</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">5,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">School Supplies</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">2023-07-22</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">Sarah Wambui</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">10,000</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Medical Fund</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12 text-gray-800">Contact Us</h2>
+            <div class="max-w-4xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Get In Touch</h3>
+                        <form id="contactForm" class="space-y-4">
+                            <div>
+                                <label for="contactName" class="block text-sm font-medium text-gray-700">Name</label>
+                                <input type="text" id="contactName" name="contactName" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label for="contactEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input type="email" id="contactEmail" name="contactEmail" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                            </div>
+                            <div>
+                                <label for="contactMessage" class="block text-sm font-medium text-gray-700">Message</label>
+                                <textarea id="contactMessage" name="contactMessage" rows="4" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500"></textarea>
+                            </div>
+                            <div>
+                                <button type="submit" class="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                                    Send Message
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Our Information</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 bg-green-100 rounded-full p-3 text-green-600">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Address</p>
+                                    <p class="text-sm text-gray-500">Nairobi, Kenya</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 bg-green-100 rounded-full p-3 text-green-600">
+                                    <i class="fas fa-envelope"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Email</p>
+                                    <p class="text-sm text-gray-500">info@slameggroup.org</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 bg-green-100 rounded-full p-3 text-green-600">
+                                    <i class="fas fa-phone"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm font-medium text-gray-900">Phone</p>
+                                    <p class="text-sm text-gray-500">+254 700 000000</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8">
+                            <h4 class="text-lg font-medium mb-2 text-gray-800">Follow Us</h4>
+                            <div class="flex space-x-4">
+                                <a href="#" class="bg-gray-100 hover:bg-gray-200 rounded-full p-3 text-gray-700">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                                <a href="#" class="bg-gray-100 hover:bg-gray-200 rounded-full p-3 text-gray-700">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                                <a href="#" class="bg-gray-100 hover:bg-gray-200 rounded-full p-3 text-gray-700">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Member Registration Modal -->
+    <div id="registerModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Member Registration</h3>
+                <button onclick="toggleRegisterModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="memberRegistrationForm" class="space-y-4">
+                <div>
+                    <label for="memberName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="memberName" name="memberName" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="memberEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="memberEmail" name="memberEmail" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="memberPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="memberPassword" name="memberPassword" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Register
+                    </button>
+                </div>
+                <div class="text-center text-sm">
+                    <p>Already a member? <button type="button" onclick="toggleRegisterModal(); toggleLoginModal();" class="text-green-600 hover:text-green-800 font-medium">Login here</button></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Member Login Modal -->
+    <div id="memberLoginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Member Login</h3>
+                <button onclick="toggleMemberLoginModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="memberLoginForm" class="space-y-4">
+                <div>
+                    <label for="loginEmail" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="loginEmail" name="loginEmail" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div>
+                    <label for="loginPassword" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="loginPassword" name="loginPassword" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="rememberMe" name="rememberMe" type="checkbox" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded">
+                        <label for="rememberMe" class="ml-2 block text-sm text-gray-700">Remember me</label>
+                    </div>
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-green-600 hover:text-green-500">Forgot password?</a>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Login
+                    </button>
+                </div>
+                <div class="text-center text-sm">
+                    <p>Not a member? <button type="button" onclick="toggleMemberLoginModal(); toggleRegisterModal();" class="text-green-600 hover:text-green-800 font-medium">Register here</button></p>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold mb-4">Slameg Group</h3>
+                    <p class="text-gray-400">Making a difference through charity since 2023.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Quick Links</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#home" class="text-gray-400 hover:text-white">Home</a></li>
+                        <li><a href="#about" class="text-gray-400 hover:text-white">About</a></li>
+                        <li><a href="#events" class="text-gray-400 hover:text-white">Events</a></li>
+                        <li><a href="#donate" class="text-gray-400 hover:text-white">Donate</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Contact</h4>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <i class="fas fa-map-marker-alt mr-2 text-gray-400"></i>
+                            <span class="text-gray-400">Nairobi, Kenya</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-envelope mr-2 text-gray-400"></i>
+                            <span class="text-gray-400">info@slameggroup.org</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-phone mr-2 text-gray-400"></i>
+                            <span class="text-gray-400">+254 700 000000</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4">Newsletter</h4>
+                    <p class="text-gray-400 mb-2">Subscribe to our newsletter for updates.</p>
+                    <form class="flex">
+                        <input type="email" placeholder="Your email" class="bg-gray-700 text-white px-4 py-2 rounded-l focus:outline-none focus:ring-1 focus:ring-green-500 w-full">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-r">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+                <p>&copy; 2023 Slameg Group. All rights reserved.</p>
+                <button onclick="toggleRegisterModal()" class="mt-2 text-sm text-green-400 hover:text-green-300">Become a Member</button>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            menu.classList.toggle('hidden');
+        }
+
+        // Admin login modal toggle
+        function toggleLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Member registration modal toggle
+        function toggleRegisterModal() {
+            const modal = document.getElementById('registerModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Member login modal toggle
+        function toggleMemberLoginModal() {
+            const modal = document.getElementById('memberLoginModal');
+            modal.classList.toggle('hidden');
+        }
+
+        // Show toast notification
+        function showToast(message, isSuccess = true) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.backgroundColor = isSuccess ? '#4CAF50' : '#f44336';
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        // Admin panel sections
+        function showAdminSection(section) {
+            // Hide all admin sections first
+            document.querySelectorAll('.admin-panel').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            // Show the selected section
+            document.getElementById('adminPanel').classList.remove('hidden');
+            document.getElementById(`admin${section.charAt(0).toUpperCase() + section.slice(1)}Section`).classList.remove('hidden');
+            
+            // Load data for the section if needed
+            if (section === 'donations') {
+                loadDonationsData();
+            } else if (section === 'members') {
+                loadMembersData();
+            }
+        }
+
+        // Load sample donations data
+        function loadDonationsData() {
+            const donations = [
+                { date: '2023-06-15', name: 'John Mwangi', amount: '5,000', phone: '254712345678' },
+                { date: '2023-07-22', name: 'Sarah Wambui', amount: '10,000', phone: '254723456789' },
+                { date: '2023-08-05', name: 'David Omondi', amount: '7,500', phone: '254734567890' },
+                { date: '2023-09-18', name: 'Grace Atieno', amount: '15,000', phone: '254745678901' },
+                { date: '2023-10-30', name: 'Peter Kamau', amount: '3,000', phone: '254756789012' }
+            ];
+            
+            const tbody = document.getElementById('donationsTableBody');
+            tbody.innerHTML = '';
+            
+            donations.forEach(donation => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${donation.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${donation.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${donation.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${donation.phone}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Load sample members data
+        function loadMembersData() {
+            const members = [
+                { name: 'John Mwangi', email: 'john@example.com', joinDate: '2023-05-10' },
+                { name: 'Sarah Wambui', email: 'sarah@example.com', joinDate: '2023-06-15' },
+                { name: 'David Omondi', email: 'david@example.com', joinDate: '2023-07-22' },
+                { name: 'Grace Atieno', email: 'grace@example.com', joinDate: '2023-08-05' },
+                { name: 'Peter Kamau', email: 'peter@example.com', joinDate: '2023-09-18' }
+            ];
+            
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            
+            members.forEach(member => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${member.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${member.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${member.joinDate}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Logout admin
+        function logoutAdmin() {
+            document.querySelectorAll('.admin-panel').forEach(el => {
+                el.classList.add('hidden');
+            });
+            showToast('Logged out successfully');
+        }
+
+        // Admin login form submission
+        document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Default admin credentials (in a real app, this would be server-side authentication)
+            const adminCredentials = [
+                { username: 'admin', password: 'admin123', role: 'superadmin' },
+                { username: 'moderator', password: 'mod123', role: 'moderator' }
+            ];
+            
+            const validUser = adminCredentials.find(cred => 
+                cred.username === username && cred.password === password
+            );
+            
+            if (validUser) {
+                toggleLoginModal();
+                document.getElementById('adminPanel').classList.remove('hidden');
+                showAdminSection('upload');
+                showToast(`Welcome ${validUser.username}! (${validUser.role})`);
+            } else {
+                showToast('Invalid credentials. Please try again.', false);
+            }
+        });
+
+        // Member registration form submission
+        document.getElementById('memberRegistrationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const password = document.getElementById('memberPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', false);
+                return;
+            }
+            
+            // In a real app, this would send data to a server
+            showToast('Registration successful! You can now login.');
+            toggleRegisterModal();
+            toggleMemberLoginModal();
+        });
+
+        // Member login form submission
+        document.getElementById('memberLoginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // In a real app, this would validate credentials with a server
+            showToast('Login successful!');
+            toggleMemberLoginModal();
+        });
+
+        // Donation form submission
+        document.getElementById('donationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('donorName').value;
+            const amount = document.getElementById('donationAmount').value;
+            
+            // In a real app, this would process the donation
+            showToast(`Thank you, ${name}! Your donation of KES ${amount} has been received.`);
+            
+            // Reset form
+            this.reset();
+        });
+
+        // Contact form submission
+        document.getElementById('contactForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showToast('Thank you for your message! We will get back to you soon.');
+            this.reset();
+        });
+
+        // Upload form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const caption = document.getElementById('imageCaption').value;
+            const files = document.getElementById('galleryImages').files;
+            
+            if (files.length === 0) {
+                showToast('Please select at least one image to upload.', false);
+                return;
+            }
+            
+            // In a real app, this would upload files to a server
+            showToast(`${files.length} image(s) with caption "${caption}" uploaded successfully!`);
+            
+            // Add the new images to the gallery (simulated)
+            const galleryGrid = document.getElementById('galleryGrid');
+            for (let i = 0; i < files.length; i++) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const galleryItem = document.createElement('div');
+                    galleryItem.className = 'gallery-item rounded-lg overflow-hidden shadow-md';
+                    galleryItem.innerHTML = `
+                        <img src="${e.target.result}" alt="New Upload" class="w-full h-48 object-cover">
+                        <div class="p-3">
+                            <p class="text-sm text-gray-600">${caption || 'New Upload'}</p>
+                        </div>
+                        <div class="edit-overlay">
+                            <button class="bg-white text-gray-800 px-3 py-1 rounded hover:bg-gray-200">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </button>
+                        </div>
+                    `;
+                    galleryGrid.appendChild(galleryItem);
+                };
+                reader.readAsDataURL(files[i]);
+            }
+            
+            this.reset();
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Initialize admin panel with sample data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if there's a logged-in admin in localStorage (simulated)
+            const loggedInAdmin = localStorage.getItem('adminLoggedIn');
+            if (loggedInAdmin) {
+                document.getElementById('adminPanel').classList.remove('hidden');
+                showAdminSection('upload');
+            }
+        });
+    </script>
+</body>
+</html>
